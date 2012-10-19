@@ -1,0 +1,9 @@
+{
+    "version":1,
+    "logFile":"log/log",
+    "observPort":"9034",
+    "clientPort":"9035",
+    "hosts": [
+    	"127.0.0.1"
+    ]
+}
