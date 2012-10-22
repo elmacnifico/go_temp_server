@@ -3,20 +3,22 @@ package main
 import (
 	"bufio"
 	"bytes"
-	//"encoding/gob"
 	"encoding/binary"
 	"errors"
 	"io/ioutil"
 	"log"
 	"net"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
 )
 
 type Observer struct {
-	C net.Conn
-	B *bufio.Reader
+	C        net.Conn
+	B        *bufio.Reader
+	VersionS string
+	VersionI int64
 }
 
 func (self *Observer) HandleConn() error {
@@ -32,6 +34,8 @@ func (self *Observer) HandleConn() error {
 func (self *Observer) VersionOutdated() bool {
 	//Observer sends first his version
 	version, err := self.B.ReadString('\n')
+	//Server sets his own Version
+	self.readCurrentVersion()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -39,9 +43,9 @@ func (self *Observer) VersionOutdated() bool {
 	if err != nil {
 		log.Fatal(err)
 	}
-	if ObserverVersion < mainConfig.Version {
-		//Tell Observer he is not up to date
-		buf := bytes.NewBufferString("0\n")
+	if ObserverVersion < self.VersionI {
+		//send observer current version
+		buf := bytes.NewBufferString(self.VersionS + "\n")
 		_, err := self.C.Write(buf.Bytes())
 		if err != nil {
 			log.Println(err)
@@ -49,7 +53,7 @@ func (self *Observer) VersionOutdated() bool {
 		return true
 	}
 	//observer is up to date
-	buf := bytes.NewBufferString("1\n")
+	buf := bytes.NewBufferString("0\n")
 	_, err = self.C.Write(buf.Bytes())
 	if err != nil {
 		log.Println(err)
@@ -59,42 +63,16 @@ func (self *Observer) VersionOutdated() bool {
 
 func (self *Observer) Monitor() error {
 	//Todo:: method to monitor observer	
-	/*
-
-		for {
-			dec := gob.NewDecoder(self.B)
-			var i Input
-			err := dec.Decode(&i)
-			//connection closed
-			if err != nil {
-				return err
-			} else {
-				log.Println(i)
-				self.InputChan <- &i
-			}
-		}
-	*/
 	log.Println("start monitoring")
 	for {
-		//TODO
-		//Read version from config yaml
-		//check if version exists
-		//send version to client
-
-		buf := bytes.NewBufferString("test\n")
-		_, err := self.C.Write(buf.Bytes())
-		if err != nil {
-			self.C.Close()
-			return err
-		}
 		time.Sleep(time.Second * 5)
 	}
 	return nil
 }
 
 func (self *Observer) ObserverBootstrap() error {
-	//if bootstrap needs to be done, observer send 1 in case he is ready
-	//0 is some strange things happened
+	//if bootstrap needs to be done, observer sends 1 in case he is ready
+	//0 if some strange things happened
 	stateString, err := self.B.ReadString('\n')
 	if err != nil {
 		log.Println(err)
@@ -102,7 +80,7 @@ func (self *Observer) ObserverBootstrap() error {
 	state, err := strconv.ParseInt(strings.Trim(stateString, "\n"), 10, 64)
 	if state == 1 {
 		//send new version
-		buf, err := ioutil.ReadFile("client_bin/Client")
+		buf, err := ioutil.ReadFile("client_bin/" + self.VersionS + "/Client")
 		if err != nil {
 			log.Println(err)
 		}
@@ -124,13 +102,16 @@ func (self *Observer) ObserverBootstrap() error {
 	return nil
 }
 
-/*
-func (self *Observer) TestFunc() {
-	//Dummy Function for db io stuff
-	for i := range self.InputChan {
-		if i.Host == "blah" {
-			log.Println("blubb")
-		}
+func (self *Observer) readCurrentVersion() {
+	self.VersionS = "0"
+	self.VersionI = 0
+	files, err := filepath.Glob("client_bin/*")
+	if err != nil {
+		log.Println(err)
+	} else if len(files) > 0 {
+		self.VersionS = string(filepath.Base(files[len(files)-1]))
+		self.VersionI, _ = strconv.ParseInt(filepath.Base(files[len(files)-1]), 10, 64)
+	} else {
+		log.Println("files empty")
 	}
 }
-*/

@@ -64,7 +64,24 @@ func (self *Server) startObserver(observer *Observer) {
 	}
 }
 
+func (self *Server) startClient(client *Client) {
+	log.Println("started client for " + client.C.RemoteAddr().String())
+	err := client.handleConn()
+	if err != nil {
+		log.Println("ClientHandler returned: " + err.Error())
+		client.C.Close()
+	}
+}
+
+func (self *Server) dummyClientStarter() {
+	for client := range self.ToStartClient {
+		go client.TestFunc()
+		go self.startClient(client)
+	}
+}
+
 func (self *Server) Run() {
+	go self.dummyClientStarter()
 	for observer := range self.ToStartObserv {
 		go self.startObserver(observer)
 	}
