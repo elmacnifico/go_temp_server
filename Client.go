@@ -21,8 +21,7 @@ func (self *Client) handleConn() error {
 			log.Println("handle conn dummy func")
 		}
 	*/
-	self.Monitor()
-	return nil
+	return self.Monitor()
 }
 
 func (self *Client) Monitor() error {
@@ -34,7 +33,6 @@ func (self *Client) Monitor() error {
 		if err != nil {
 			return err
 		} else {
-			log.Println(i)
 			self.InputChan <- &i
 		}
 	}
@@ -46,8 +44,11 @@ func (self *Client) TestFunc() {
 	for i := range self.InputChan {
 		if i.Host == "blah" {
 			log.Println("blubb")
-		} else {
-			log.Println(i.Host)
 		}
+		/*
+			else {
+				log.Println(i.Host)
+			}
+		*/
 	}
 }

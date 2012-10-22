@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"log"
 	"net"
+	"time"
 )
 
 type Server struct {
@@ -58,6 +59,7 @@ func (self *Server) startObserver(observer *Observer) {
 	log.Println("started observer for " + observer.C.RemoteAddr().String())
 	err := observer.HandleConn()
 	//handle closed connection
+	//make sure failed connections return errors!
 	if err != nil {
 		log.Println("ObserverHandler returned:" + err.Error())
 		observer.C.Close()
@@ -73,16 +75,26 @@ func (self *Server) startClient(client *Client) {
 	}
 }
 
-func (self *Server) dummyClientStarter() {
+func (self *Server) ClientStarter() {
 	for client := range self.ToStartClient {
 		go client.TestFunc()
 		go self.startClient(client)
 	}
 }
 
-func (self *Server) Run() {
-	go self.dummyClientStarter()
+func (self *Server) ObserverStarter() {
 	for observer := range self.ToStartObserv {
 		go self.startObserver(observer)
 	}
+}
+
+func (self *Server) Run() {
+	go self.ClientStarter()
+	go self.ObserverStarter()
+	for {
+		//replace this with function which checks for new source
+		// builds new binaries and set new versions
+		time.Sleep(time.Second * 10)
+	}
+
 }

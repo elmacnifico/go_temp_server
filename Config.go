@@ -10,9 +10,9 @@ import (
 type Config struct {
 	ObservPort string
 	ClientPort string
-	Hosts      []string
-	LogFile    string
-	Version    int64
+	//Hosts      []string
+	LogFile string
+	//Version int64
 }
 
 func (self *Config) load(configFile *string) {
@@ -34,8 +34,4 @@ func (self *Config) setLog() {
 	}
 	log.SetOutput(logger)
 	log.SetFlags(5)
-}
-
-func (self *Config) log() {
-
 }

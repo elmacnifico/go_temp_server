@@ -62,12 +62,33 @@ func (self *Observer) VersionOutdated() bool {
 }
 
 func (self *Observer) Monitor() error {
-	//Todo:: method to monitor observer	
 	log.Println("start monitoring")
 	for {
 		time.Sleep(time.Second * 5)
+		myOldVersion := self.VersionI
+		self.readCurrentVersion()
+		if self.VersionI != myOldVersion {
+			log.Println("send new version string")
+			n, err := self.C.Write(bytes.NewBufferString(self.VersionS + "\n").Bytes())
+			if err != nil {
+				log.Println("error sending versionstring: " + err.Error())
+				break
+			} else {
+				log.Println("new version send: send bytes: " + strconv.Itoa(n))
+			}
+			log.Println("start bootstraping")
+			self.ObserverBootstrap()
+		} else {
+			n, err := self.C.Write(bytes.NewBufferString("0\n").Bytes())
+			if err != nil {
+				log.Println(err)
+				break
+			} else {
+				log.Println("heartbeat send: send bytes: " + strconv.Itoa(n))
+			}
+		}
 	}
-	return nil
+	return errors.New("observer error")
 }
 
 func (self *Observer) ObserverBootstrap() error {
