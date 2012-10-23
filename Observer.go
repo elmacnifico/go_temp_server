@@ -9,6 +9,7 @@ import (
 	"log"
 	"net"
 	"path/filepath"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -126,13 +127,29 @@ func (self *Observer) ObserverBootstrap() error {
 func (self *Observer) readCurrentVersion() {
 	self.VersionS = "0"
 	self.VersionI = 0
-	files, err := filepath.Glob("client_bin/*")
+	dirs, err := filepath.Glob("client_bin/*")
+	versions := self.sortFiles(dirs)
+	log.Println(versions)
 	if err != nil {
 		log.Println(err)
-	} else if len(files) > 0 {
-		self.VersionS = string(filepath.Base(files[len(files)-1]))
-		self.VersionI, _ = strconv.ParseInt(filepath.Base(files[len(files)-1]), 10, 64)
+	} else if len(dirs) > 0 {
+		self.VersionS = strconv.Itoa(versions[len(versions)-1])
+		log.Println(self.VersionS + "\n")
+		self.VersionI = int64(versions[len(versions)-1])
 	} else {
 		log.Println("files empty")
 	}
+}
+
+func (self *Observer) sortFiles(dirs []string) []int {
+	versions := make([]int, len(dirs))
+	for i := 0; i < len(dirs); i++ {
+		version, err := strconv.ParseInt(filepath.Base(dirs[i]), 10, 64)
+		versions[i] = int(version)
+		if err != nil {
+			log.Println(err)
+		}
+	}
+	sort.Ints(versions)
+	return versions
 }
