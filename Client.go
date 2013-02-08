@@ -3,33 +3,26 @@ package main
 import (
 	"bufio"
 	"encoding/gob"
-	"log"
 	"net"
-	//"time"
 )
 
 type Client struct {
-	C         net.Conn
+	Conn      net.Conn
 	InputChan chan *Input
-	B         *bufio.Reader
+	Buff      *bufio.Reader
+    Cache     *Cache
 }
 
 func (self *Client) handleConn() error {
-	/*
-		for {
-			time.Sleep(time.Second * 5)
-			log.Println("handle conn dummy func")
-		}
-	*/
 	return self.Monitor()
 }
 
 func (self *Client) Monitor() error {
 	for {
-		dec := gob.NewDecoder(self.B)
+        //incoming data from this client in inputchan
+		dec := gob.NewDecoder(self.Buff)
 		var i Input
 		err := dec.Decode(&i)
-		//connection closed
 		if err != nil {
 			return err
 		} else {
@@ -39,16 +32,8 @@ func (self *Client) Monitor() error {
 	return nil
 }
 
-func (self *Client) TestFunc() {
-	//Dummy Function for db io stuff
+func (self *Client) ProcessInput() {
 	for i := range self.InputChan {
-		if i.Host == "blah" {
-			log.Println("blubb")
-		}
-		/*
-			else {
-				log.Println(i.Host)
-			}
-		*/
+        self.Cache.Insert( i.Time.Second(), i.Time.Minute(), i.Host, i.Value )
 	}
 }
